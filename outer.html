@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Sending messages using postMessage</title>
+    </head>
+    <body>
+        <button id="themeToggle" type="button">Switch to dark mode</button>
+
+        <iframe
+            src="content.html"
+            title="Content Frame"
+            width="100%"
+            height="600px"
+            id="contentFrame"
+        ></iframe>
+
+        <script>
+            const iframe = document.getElementById("contentFrame");
+            const themeToggle = document.getElementById("themeToggle");
+            const themeStorageKey = "theme";
+
+            const getStoredTheme = () => {
+                try {
+                    return sessionStorage.getItem(themeStorageKey) === "dark"
+                        ? "dark"
+                        : "light";
+                } catch {
+                    return "light";
+                }
+            };
+
+            const setStoredTheme = theme => {
+                try {
+                    sessionStorage.setItem(themeStorageKey, theme);
+                } catch {
+                    // Ignore storage failures.
+                }
+            };
+
+            let currentTheme = getStoredTheme();
+
+            const updateThemeToggleLabel = theme => {
+                themeToggle.textContent =
+                    theme === "light"
+                        ? "Switch to dark mode"
+                        : "Switch to light mode";
+            };
+
+            updateThemeToggleLabel(currentTheme);
+
+            const sendMessage = () => {
+                const legibleDateTime = new Date().toLocaleString();
+                const text = `It's ${legibleDateTime}.`;
+                console.log("Sending text to iframe:", text);
+                iframe.contentWindow?.postMessage(text, "*");
+            };
+
+            const sendTheme = theme => {
+                iframe.contentWindow?.postMessage(
+                    { type: "theme", theme },
+                    "*",
+                );
+            };
+
+            themeToggle.addEventListener("click", () => {
+                currentTheme = currentTheme === "light" ? "dark" : "light";
+                setStoredTheme(currentTheme);
+                updateThemeToggleLabel(currentTheme);
+                sendTheme(currentTheme);
+            });
+
+            iframe.addEventListener("load", () => {
+                sendMessage();
+                sendTheme(currentTheme);
+                updateThemeToggleLabel(currentTheme);
+                setInterval(sendMessage, 1000);
+            });
+        </script>
+    </body>
+</html>
